@@ -1,4 +1,4 @@
-// Add all scripts to the JS folder
+// Leah Bates Using GeoJSON with Leaflet
 
 var mymap = L.map("mapid").setView([ 39.75621, -104.99404], 4);
 
