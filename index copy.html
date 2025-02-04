@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width">
-            <title></title>
+            <title>My Leaflet Map</title>
 
         <!--put your external stylesheet links here-->
         <link rel="stylesheet" href="css/style.css">
@@ -14,16 +14,19 @@
 
          <!--you can also place internal styles here;
              place these within <style> tags-->
-        
+        <style>
+            #mapid{ height:500px; }
+        </style>
     </head>
 
     <body>
         <!--put your initial page content here-->
-
+        <div id="mapid"></div>
         <!--you can also use this space for internal scripts;
         place these within <script> tags-->
         <script src="lib/leaflet/leaflet-src.js"></script>
         <!--put your external script links here-->
         <script type="text/javascript" src="js/main.js"></script>
+
     </body>
 </html>
