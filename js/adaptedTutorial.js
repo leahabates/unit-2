@@ -1,4 +1,4 @@
-// Add all scripts to the JS folder
+// Leah Bates adpated tutorial
 
 //2.3 and 2.4
 // var mymap = L.map("mapid").setView([ 0, 0], 2);
