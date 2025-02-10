@@ -4,7 +4,7 @@ var map;
 //function to instantiate the leaflet map
 function createMap(){
     //create map
-    map = L.map('mapid').setView([43.0722,-89.398422], 12.5);
+    map = L.map('mapid').setView([45,-89.5], 7);
 
     //add OSM base tilelayer
     L.tileLayer('https://tile.openstreetmap.bzh/ca/{z}/{x}/{y}.png',{
@@ -27,19 +27,31 @@ function onEachFeature(feature, layer) {
         layer.bindPopup(popupContent);
     };
 };
+function pointToLayer (feature,latlng){
 
+    var radius = 8
+    var color = "#FF0000";
+
+    return L.circleMarker(latlng, {
+        radius : radius,
+        color : color,
+        filllColor : color,
+        fillOpacity: 0.6
+    });
+}
         
 //function to retrieve the data and place it on the map
 function getData(){
     //load the data
-    fetch("data/bbikeStations.geojson")
+    fetch("data/childPovRates.geojson")
         .then(function(response){
             return response.json();
         })
         .then(function(json){
             //create a Leaflet GeoJSON layer and add it to the map
             L.geoJson(json, {
-                onEachFeature: onEachFeature
+                onEachFeature: onEachFeature,
+                pointToLayer: pointToLayer
             }).addTo(map);
         })  
 };
