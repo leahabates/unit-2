@@ -3,29 +3,30 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width">
-            <title>My Leaflet Map</title>
+        <title>My Leaflet Map</title>
 
-        <!--put your external stylesheet links here-->
+        <!-- External stylesheet links -->
         <link rel="stylesheet" href="css/style.css">
         <link rel="stylesheet" href="lib/leaflet/leaflet.css">
         <!--[if IE<9]>
             <link rel="stylesheet" href="css/style.ie.css">
         <![endif]-->
 
-         <!--you can also place internal styles here;
-             place these within <style> tags-->
+        <!-- Internal styles -->
         <style>
-            #mapid{ height:500px; }
+            #mapid{ height:600px; }
         </style>
     </head>
 
     <body>
-        <!--put your initial page content here-->
+        <!-- Page content -->
         <div id="mapid"></div>
-        <!--you can also use this space for internal scripts;
-        place these within <script> tags-->
+        <div id="panel"></div>
+
+        <!-- External scripts -->
         <script src="lib/leaflet/leaflet-src.js"></script>
-        <!--put your external script links here-->
+
+        <!-- Your custom JavaScript file, placed at the end of body to avoid issues -->
         <script type="text/javascript" src="js/main.js"></script>
 
     </body>
