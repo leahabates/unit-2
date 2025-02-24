@@ -1,6 +1,7 @@
 
 var map;
 var minValue;
+var dataStats = {};
 
 //function to instantiate the leaflet map
 function createMap(){
@@ -12,9 +13,59 @@ function createMap(){
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Tiles courtesy of <a href="https://www.openstreetmap.cat" target="_blank">Breton OpenStreetMap Team</a>' 
         }).addTo(map);
 
+    console.log(L.tileLayer.providers);
+
+     L.tileLayer.provider('CartoDB.Positron').addTo(map)
+
+        // Add the geocoder control
+    L.Control.geocoder({
+        geocoder: L.Control.Geocoder.nominatim(),
+        defaultMarkGeocode: false,
+        placeholder: "Search for a location...",
+        collapsed: false, // Set to true if you want it to be initially collapsed
+    }).on('markgeocode', function (e) {
+        // This function is called when a location is selected
+        var latlng = e.geocode.center;
+        var zoom = 12; // You can set your desired zoom level
+        map.setView(latlng, zoom);
+    }).addTo(map);
+
     //calls the getData function
     getData();
 };
+
+function calcStats(data){
+    //create empty array to store all data values
+    var allValues = [];
+    //loop through each county
+    for(var County of data.features){
+        //loop through each year
+        for(var year = 2017; year <= 2023; year+=1){
+              //get population for current year
+              var value = County.properties["yr_"+ String(year)];
+              //add value to array
+              allValues.push(value);
+        }
+    }
+    //get min, max, mean stats for our array
+    dataStats.min = Math.min(...allValues);
+    dataStats.max = Math.max(...allValues);
+    //calculate meanValue
+    var sum = allValues.reduce(function(a, b){return a+b;});
+    dataStats.mean = sum/ allValues.length;
+
+}    
+
+function createPopupContent (properties, attribute){
+    //add county to popup content string
+    var popupContent = "<p><b>County:</b> " + properties.County + "</p>";
+
+    //add formatted attribute to panel content string
+    var year = attribute.split("_")[1];
+    popupContent += "<p><b>Child Poverty Rate in " + year + ": </b>" + properties[attribute];
+
+    return popupContent;
+}
 
 function calculateMinValue(data){
     // create an empy array to store the data values
@@ -69,12 +120,10 @@ function pointToLayer(feature, latlng, attributes){
     var layer = L.circleMarker(latlng,options);
 
     //build popup content string
-    var popupContent = "<p><b>County:</b>" + feature.properties.County + "</p><p><b>" + attribute + ":</b>" + feature.properties[attribute] + "</p>";
+    var popupContent = createPopupContent(feature.properties, attribute);
 
     //bind the popup  to the circle marker with an offset to avoid overlap
-    layer.bindPopup(popupContent, {
-        offset: new L.Point(0, -options.radius)
-    });
+    layer.bindPopup(popupContent, { offset: new L.Point(0, -options.radius)});
 
     //return the circle marker to the L.geoJson pointToLayer option
     return layer; 
@@ -92,52 +141,76 @@ function createPropSymbols(data, map, attributes){
 };
 
 //create new sequence controls
-function createSequenceControls(attributes){
-    // create range input element (slider)
-    var slider = "<input class='range-slider' type='range'></input>";
-    document.querySelector('#panel').insertAdjacentHTML('beforeend',slider);
+ function createSequenceControls(attributes){   
+    var SequenceControl = L.Control.extend({
+        options: {
+            position: 'bottomleft'
+        },
 
-    //set slider attributes
-    document.querySelector(".range-slider").max = 6;
-    document.querySelector(".range-slider").min = 0;
-    document.querySelector(".range-slider").value = 0;
-    document.querySelector(".range-slider").step = 1;
+        onAdd: function () {
+            // create the control container div with a particular class name
+            var container = L.DomUtil.create('div', 'sequence-control-container');
 
-    //add buttons
-    document.querySelector("#panel").insertAdjacentHTML('beforeend', '<button class="step" id="reverse">Reverse</button>');
-    document.querySelector("#panel").insertAdjacentHTML('beforeend', '<button class="step" id="forward">Forward</button>');
+            //create range input element (slider)
+            container.insertAdjacentHTML('beforeend', '<input class="range-slider" type="range">')
 
-    //should replace the buttons with the images
-    document.querySelector('#reverse').insertAdjacentHTML('beforeend',"<img src='img/backward_arrow.png'>")
-    document.querySelector('#forward').insertAdjacentHTML('beforeend',"<img src='img/forward_arrow.png'>")
+            //set slider attributes
+            container.querySelector(".range-slider").max = 6;
+            container.querySelector(".range-slider").min = 0;
+            container.querySelector(".range-slider").value = 0;
+            container.querySelector(".range-slider").step = 1;
+
+            //add skip buttons
+            container.insertAdjacentHTML('beforeend','<button class="step" id="reverse" title="Reverse"><img src="img/backward_arrow.png"></button>'); 
+            container.insertAdjacentHTML('beforeend','<button class="step" id="forward" title="Forward"><img src="img/forward_arrow.png"></button>');
+
+            //disable any mouse event listeners for the container
+            L.DomEvent.disableClickPropagation(container);
+
+            return container;
+        }
+
+    });
+
+    map.addControl(new SequenceControl());   
 
     // click listener for buttons
     document.querySelectorAll('.step').forEach(function(step){
         step.addEventListener("click", function(){
-            //increment or decrement depending on button clicked
             var index = document.querySelector('.range-slider').value;
 
+            //increment or decrement depending on button clicked
             if (step.id == 'forward'){
                 index++;
-                //if past the last attribute, wrap around to first attribute
+                // if past the last attribute, wrap around to first attribute
                 index = index > 6 ? 0 : index;
             } else if (step.id == 'reverse'){
                 index--;
-                //if past the first attribute, wrap around to last attribute
+                // if past the first attribute, wrap around to last attribute
                 index = index < 0 ? 6 : index;
             };
+
+            //update slider
             document.querySelector('.range-slider').value = index;
-            updatePropSymbols(attributes[index])
+
+            // pass new attribute to update symbols
+            updatePropSymbols(attributes[index]);
+
+            // update legend as well
+            updateLegend(attributes[index]);
         })
+
     })
-    //input listener for slider
-    document.querySelector(".range-slider").addEventListener('input',function(){
-        //get the new index value
+
+    // input listener for slider
+    document.querySelector('.range-slider').addEventListener('input', function(){            
         var index = this.value;
-        console.log(index)
-        updatePropSymbols(attributes[index])
+        // pass new attribute to update symbols
+        updatePropSymbols(attributes[index]);
+        // update legend as well
+        updateLegend(attributes[index]);  
     });
-}
+};
 
 //function to bueld the attributes array 
 function processData(data){
@@ -159,6 +232,111 @@ function processData(data){
 
     return attributes;
 }
+function LegendContent (attribute){
+    this.year = attribute.split("_")[1];
+    this.formatted = '<p class="legend-content"><b> Child Poverty Rates in <span class="year">2017</span></b></p>'
+};
+
+function createLegend(attributes) {
+    var LegendControl = L.Control.extend({
+        options: {
+            position: 'bottomright'
+        },
+
+        onAdd: function () {
+            var container = L.DomUtil.create('div', 'legend-control-container');
+
+            container.innerHTML = '<p class="legend-control-container">Child Poverty Rates in <span class="year">2017</span></p>';
+
+            //start attribute legend svg string
+            var svg = '<svg id="attribute-legend" width="160px" height="60px">';
+
+            
+
+            //array of circles names to base loop on
+            var circles = ["max","mean", "min"];
+
+            // loop to add each circ;e and text to svg string
+            for (var i=0; i<circles.length; i++){
+                // assign the r and cy attributes
+                var radius = calcPropRadius(dataStats[circles[i]]);
+                var cy = 59 - radius;
+                //circle string
+                svg += '<circle class="legend-circle" id="' + circles[i] + '" r="' + radius + '"cy="' + cy + '" fill="#F47821" fill-opacity="0.8" stroke="#000000" cx="30"/>';
+
+                //evenly space out labels            
+                var textY = i * 20 + 20;            
+
+            //text string            
+                svg += '<text id="' + circles[i] + '-text" x="65" y="' + textY + '">' + Math.round(dataStats[circles[i]]*100)/100 + "%" + '</text>';
+            };
+
+            //close svg string
+            svg += "</svg>";
+
+            //add attribute legend to container
+            container.insertAdjacentHTML('beforeend', svg)
+
+            return container;
+        }
+    });
+
+    map.addControl(new LegendControl());
+}
+
+function updateLegend(attribute) {
+    var year = attribute.split("_")[1];  // Get the year from the attribute
+    
+    document.querySelector("span.year").innerHTML = year;
+};
+
+function createSequenceControls(attributes) {
+    var SequenceControl = L.Control.extend({
+        options: {
+            position: 'bottomleft'
+        },
+
+        onAdd: function () {
+            var container = L.DomUtil.create('div', 'sequence-control-container');
+            container.insertAdjacentHTML('beforeend', '<input class="range-slider" type="range">')
+            container.querySelector(".range-slider").max = 6;
+            container.querySelector(".range-slider").min = 0;
+            container.querySelector(".range-slider").value = 0;
+            container.querySelector(".range-slider").step = 1;
+            container.insertAdjacentHTML('beforeend','<button class="step" id="reverse"><img src="img/backward_arrow.png"></button>'); 
+            container.insertAdjacentHTML('beforeend','<button class="step" id="forward"><img src="img/forward_arrow.png"></button>');
+            L.DomEvent.disableClickPropagation(container);
+            return container;
+        }
+    });
+
+    map.addControl(new SequenceControl());
+
+    document.querySelectorAll('.step').forEach(function(step){
+        step.addEventListener("click", function(){
+            var index = document.querySelector('.range-slider').value;
+
+            if (step.id == 'forward'){
+                index++;
+                index = index > 6 ? 0 : index;
+            } else if (step.id == 'reverse'){
+                index--;
+                index = index < 0 ? 6 : index;
+            }
+
+            document.querySelector('.range-slider').value = index;
+            updatePropSymbols(attributes[index]);
+            updateLegend(attributes[index]); // Update the legend when changing year
+        });
+    });
+
+    document.querySelector('.range-slider').addEventListener('input', function(){
+        var index = this.value;
+        updatePropSymbols(attributes[index]);
+        updateLegend(attributes[index]);  // Update the legend when slider is adjusted
+    });
+}
+
 
 //function to resize proportional symbols accrording to new attribute vlaues
 function updatePropSymbols(attribute) {
@@ -172,11 +350,7 @@ function updatePropSymbols(attribute) {
             layer.setRadius(radius);
 
             //add county to popup content string
-            var popupContent = "<p><b>County:</b>" + props.County + "</p";
-
-            //add formatted attribute to panel content string
-            var year = attribute.split("_")[1];
-            popupContent += "<p><b>Child Poverty Rate in" + year + ":</b>" + props[attribute];
+            var popupContent = createPopupContent(props, attribute);
 
             //update popup content
             popup = layer.getPopup();
@@ -194,10 +368,19 @@ function getData(){
         })
         .then(function(json){
             var attributes = processData(json);
-            //calculate minimum data value
-            minValue = calculateMinValue(json);
+
+            //calc sates
+            calcStats(json);
+
+            minValue=dataStats.min
+
+    
             //call function to create proportional symbols
             createPropSymbols(json,map,attributes); //not the attributes variable that will store the array
+            // ensure legend is created 
+            createLegend(attributes);
+            // update the legend with the first attribute
+            updateLegend(attributes[0])
             //function that creates the sequence control
             createSequenceControls(attributes);
         })  
