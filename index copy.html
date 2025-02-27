@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width">
-        <title>My Leaflet Map</title>
+        <title>Child Poverty Rates in Wisconsin</title>
 
         <!-- External stylesheet links -->
         <link rel="stylesheet" href="css/style.css">
@@ -15,15 +15,38 @@
 
         <!-- Internal styles -->
         <style>
-            #mapid{ height:600px; }
+            html, body {
+                margin: 0;
+                height: 100%;
+            }
+             .map-title-container {
+                position: fixed;
+                top: 10px;
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 1000;
+                text-align: center;
+                background: rgba(255, 255, 255, 0.8); /* Semi-transparent background */
+                padding: 10px;
+                border-radius: 5px;
+                font-family: Arial, sans-serif;
+                font-size: 20px;
+                font-weight: bold;
+                color: #333;
+                width: auto; /* Ensure title width spans across */
+             }   
+            #mapid{ 
+                height:100vh; 
+                width: 100%;
+                position: relative;
+            }
         </style>
     </head>
 
     <body>
         <!-- Page content -->
-        <div id="mapid"></div>
-        <div id="panel"></div>
-        
+         <div class="map-title-container"></div>
+        <div id="mapid"></div>        
 
         <!-- External scripts -->
         <script src="lib/leaflet/leaflet-src.js"></script>
