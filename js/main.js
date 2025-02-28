@@ -6,7 +6,7 @@ var dataStats = {};
 //function to instantiate the leaflet map
 function createMap(){
     //create map
-    map = L.map('mapid').setView([44.75,-89.5], 7.25);
+    map = L.map('mapid').setView([44.75,-89.5], 7);
 
     //add OSM base tilelayer
     L.tileLayer('https://tile.openstreetmap.bzh/ca/{z}/{x}/{y}.png',{
@@ -30,12 +30,47 @@ function createMap(){
         map.setView(latlng, zoom);
     }).addTo(map);
 
+    //add describtion of data
+    createDescriptionControl();
+
     //add title control
     createTitleControl();
 
     //calls the getData function
     getData();
 };
+
+function createDescriptionControl() {
+    var DescriptionControl = L.Control.extend({
+        options: {
+            position: 'bottomleft'  // Position where you want the description to appear (e.g., 'topright', 'bottomleft')
+        },
+
+        onAdd: function () {
+            // Create the container for the description
+            var container = L.DomUtil.create('div', 'description-container');
+            
+            // Add description text to the container
+            container.innerHTML = `
+                <h3>Data Source and Explanation</h3>
+                <p>This map visualizes child poverty rates by county from 2017 to 2023. The data was sourced from US Census Bureau.</p>
+                <p>The poverty rate is calculated as the percentage of children living below the poverty line in each county.</p>
+                <p>Use the slider and buttons to explore data across different years.</p>
+            `;
+            
+            // Style the description (optional)
+            container.style.background = 'rgba(255, 255, 255, 0.7)';
+            container.style.padding = '10px';
+            container.style.borderRadius = '5px';
+            container.style.fontFamily = 'Arial, sans-serif';
+            container.style.fontSize = '12px';
+            
+            return container;
+        }
+    });
+
+    map.addControl(new DescriptionControl());
+}
 
 function createTitleControl() {
     var TitleControl = L.Control.extend({
@@ -48,7 +83,7 @@ function createTitleControl() {
             var container = L.DomUtil.create('div', 'map-title-container');
             
             // Add the title text to the container
-            container.innerHTML = '<h3>Child Poverty Rates by Year</h3>';
+            container.innerHTML = '<h3>Child Poverty Rates in Wisconsin</h3>';
             
             // Style the title (optional)
             container.style.background = 'rgba(255, 255, 255, 0.7)';
@@ -134,7 +169,7 @@ function pointToLayer(feature, latlng, attributes){
 
     //create marker option
     var options = {
-        fillColor : "#ff7800",
+        fillColor : "#ff0000",
         color : "#000",
         weight : 1,
         opacity : 1,
@@ -293,7 +328,7 @@ function createLegend(attributes) {
                 var radius = calcPropRadius(dataStats[circles[i]]);
                 var cy = 59 - radius;
                 //circle string
-                svg += '<circle class="legend-circle" id="' + circles[i] + '" r="' + radius + '"cy="' + cy + '" fill="#F47821" fill-opacity="0.8" stroke="#000000" cx="30"/>';
+                svg += '<circle class="legend-circle" id="' + circles[i] + '" r="' + radius + '"cy="' + cy + '" fill="#ff0000" fill-opacity="0.8" stroke="#000000" cx="30"/>';
 
                 //evenly space out labels            
                 var textY = i * 20 + 20;            
