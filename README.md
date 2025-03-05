@@ -1,5 +1,4 @@
 Add data sources to the data folder
-https://leahabates.github.io/Unit-2/
 ### **Title:** *Child Poverty Rates in Wisconsin*
 
 ### **Author:** Leah Bates
